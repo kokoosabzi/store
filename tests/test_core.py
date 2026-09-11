@@ -46,3 +46,11 @@ def test_return_cannot_exceed_the_original_quantity():
     client.post(f"/api/sales/{sale['id']}/finalize",params={'account_id':account['id']})
     response=client.post(f"/api/sales/{sale['id']}/returns",json={'items':[{'sale_item_id':1,'quantity':'2'}]})
     assert response.status_code==422
+
+def test_custom_attributes_and_low_stock_are_generic():
+    product=client.post('/api/products',json={'name':'محصول عمومی','min_stock':'2'}).json()
+    attribute=client.post('/api/attributes',json={'name':'رنگ','data_type':'select','is_filterable':True}).json()
+    value=client.put(f"/api/products/{product['id']}/attributes",json={'attribute_definition_id':attribute['id'],'value':'آبی'})
+    assert value.status_code==200
+    assert client.get(f"/api/products/{product['id']}/attributes").json()[0]['value']=='آبی'
+    assert client.get('/api/inventory/low-stock').json()[0]['id']==product['id']

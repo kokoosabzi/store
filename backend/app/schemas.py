@@ -19,3 +19,14 @@ class SalesReturnIn(BaseModel):
     refund_amount: Decimal = Field(default=0, ge=0)
     refund_account_id: int | None = None
     note: str | None = None
+
+class AttributeDefinitionIn(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    data_type: str = Field(default='text', pattern='^(text|number|date|select|multi_select|boolean)$')
+    is_searchable: bool = False
+    is_filterable: bool = False
+    show_on_card: bool = True
+
+class ProductAttributeValueIn(BaseModel):
+    attribute_definition_id: int
+    value: str = Field(min_length=1)

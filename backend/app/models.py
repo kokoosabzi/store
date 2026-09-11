@@ -63,3 +63,19 @@ class ReturnItem(Base):
     quantity: Mapped[Decimal] = mapped_column(Numeric(14, 3))
     condition: Mapped[str] = mapped_column(String(15), default='sellable')
     unit_price: Mapped[Decimal] = mapped_column(Money)
+
+class AttributeDefinition(Base, Timestamped):
+    __tablename__ = 'attribute_definitions'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    data_type: Mapped[str] = mapped_column(String(20), default='text')
+    is_searchable: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_filterable: Mapped[bool] = mapped_column(Boolean, default=False)
+    show_on_card: Mapped[bool] = mapped_column(Boolean, default=True)
+
+class ProductAttributeValue(Base):
+    __tablename__ = 'product_attribute_values'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey('products.id', ondelete='CASCADE'), nullable=False)
+    attribute_definition_id: Mapped[int] = mapped_column(ForeignKey('attribute_definitions.id'), nullable=False)
+    value: Mapped[str] = mapped_column(Text, nullable=False)

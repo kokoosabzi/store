@@ -36,6 +36,27 @@ def barcode(barcode:str,db:Session=Depends(get_db)):
     item=db.scalar(select(Product).where(Product.barcode==barcode));
     if not item: fail('بارکد پیدا نشد.',404)
     return data(item)
+@app.get('/api/inventory/low-stock')
+def low_stock(db:Session=Depends(get_db)):
+    return [data(product) for product in db.scalars(select(Product).where(Product.current_stock <= Product.min_stock, Product.is_active == True)).all()]
+@app.get('/api/attributes')
+def attributes(db:Session=Depends(get_db)):
+    return [data(item) for item in db.scalars(select(AttributeDefinition).order_by(AttributeDefinition.name)).all()]
+@app.post('/api/attributes', status_code=201)
+def create_attribute(body:AttributeDefinitionIn, db:Session=Depends(get_db)):
+    item=AttributeDefinition(**body.model_dump()); db.add(item); db.flush(); audit(db, 'create', 'attribute_definition', item.id); return data(item)
+@app.put('/api/products/{product_id}/attributes')
+def set_product_attribute(product_id:int, body:ProductAttributeValueIn, db:Session=Depends(get_db)):
+    if not db.get(Product, product_id): fail('محصول پیدا نشد.', 404)
+    if not db.get(AttributeDefinition, body.attribute_definition_id): fail('خصوصیت پیدا نشد.', 404)
+    item=db.scalar(select(ProductAttributeValue).where(ProductAttributeValue.product_id == product_id, ProductAttributeValue.attribute_definition_id == body.attribute_definition_id))
+    if item: item.value=body.value
+    else: item=ProductAttributeValue(product_id=product_id, **body.model_dump()); db.add(item)
+    db.flush(); audit(db, 'update', 'product_attribute_value', item.id); return data(item)
+@app.get('/api/products/{product_id}/attributes')
+def product_attributes(product_id:int, db:Session=Depends(get_db)):
+    if not db.get(Product, product_id): fail('محصول پیدا نشد.', 404)
+    return [data(item) for item in db.scalars(select(ProductAttributeValue).where(ProductAttributeValue.product_id == product_id)).all()]
 @app.post('/api/customers',status_code=201)
 def create_customer(body:PartyIn,db:Session=Depends(get_db)):
     x=Customer(**body.model_dump(exclude={'code'}),code=body.code or make_code('CUS',db,Customer));db.add(x);db.flush();return data(x)
