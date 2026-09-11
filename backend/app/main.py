@@ -9,6 +9,7 @@ from .database import Base, engine, get_db
 from .models import *
 from .schemas import *
 from .services import audit, fail, finalize_purchase, finalize_sale, finalize_sales_return, move, payment
+from .backup import create_backup
 @asynccontextmanager
 async def lifespan(app):
     yield
@@ -98,6 +99,14 @@ def expense(body:ExpenseIn,db:Session=Depends(get_db)):
     a=db.get(Account,body.account_id)
     if not a: fail('حساب پیدا نشد.',404)
     a.current_balance-=body.amount;x=Expense(**body.model_dump());db.add(x);db.flush();audit(db,'create','expense',x.id);return data(x)
+@app.post('/api/backups', status_code=201)
+def backup(db:Session=Depends(get_db)):
+    try:
+        result = create_backup()
+    except ValueError as error:
+        fail(str(error))
+    audit(db, 'create', 'backup', 0, result['path'])
+    return result
 @app.get('/api/reports/profit-loss')
 def profit_loss(db:Session=Depends(get_db)):
     sales=db.scalars(select(Sale).where(Sale.status=='finalized')).all(); returns=db.scalars(select(SalesReturn)).all(); expenses=db.scalars(select(Expense)).all(); revenue=sum((s.total for s in sales),Decimal('0'))-sum((r.total for r in returns),Decimal('0')); cogs=sum((i.quantity*i.unit_cost_at_sale for s in sales for i in s.items),Decimal('0'))-sum((i.quantity*db.get(SaleItem,i.sale_item_id).unit_cost_at_sale for r in returns for i in r.items),Decimal('0')); operating=sum((x.amount for x in expenses),Decimal('0')); return {'revenue':str(revenue),'cogs':str(cogs),'gross_profit':str(revenue-cogs),'operating_expenses':str(operating),'net_profit':str(revenue-cogs-operating)}

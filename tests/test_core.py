@@ -35,3 +35,14 @@ def test_sellable_return_reverses_revenue_and_cogs():
     assert returned.status_code==201
     assert client.get('/api/inventory').json()[0]['current_stock']=='2.000'
     report=client.get('/api/reports/profit-loss').json(); assert report['revenue']=='0.00' and report['cogs']=='0.00000'
+
+def test_return_cannot_exceed_the_original_quantity():
+    account=client.post('/api/accounts',params={'name':'صندوق'}).json()
+    supplier=client.post('/api/suppliers',json={'name':'تامین'}).json()
+    product=client.post('/api/products',json={'name':'کالای محدود'}).json()
+    purchase=client.post('/api/purchases/draft',json={'supplier_id':supplier['id'],'items':[{'product_id':product['id'],'quantity':'1','unit_price':'10'}]}).json()
+    client.post(f"/api/purchases/{purchase['id']}/finalize",params={'account_id':account['id']})
+    sale=client.post('/api/sales/draft',json={'items':[{'product_id':product['id'],'quantity':'1','unit_price':'20'}],'paid_amount':'20'}).json()
+    client.post(f"/api/sales/{sale['id']}/finalize",params={'account_id':account['id']})
+    response=client.post(f"/api/sales/{sale['id']}/returns",json={'items':[{'sale_item_id':1,'quantity':'2'}]})
+    assert response.status_code==422
