@@ -81,9 +81,20 @@ def purchase_finalize(purchase_id:int,account_id:int|None=None,db:Session=Depend
     x=db.get(Purchase,purchase_id)
     if not x: fail('خرید پیدا نشد.',404)
     finalize_purchase(db,x,account_id); return data(x)
+@app.get('/api/purchases')
+def purchases(status:str|None=None, db:Session=Depends(get_db)):
+    query=select(Purchase)
+    if status: query=query.where(Purchase.status == status)
+    return [data(item) for item in db.scalars(query.order_by(Purchase.created_at.desc())).all()]
 @app.post('/api/sales/draft',status_code=201)
 def sale_draft(body:DocumentIn,db:Session=Depends(get_db)):
     x=Sale(customer_id=body.customer_id,discount=body.discount,tax=body.tax,paid_amount=body.paid_amount,items=[SaleItem(**i.model_dump(),unit_cost_at_sale=None) for i in body.items]);db.add(x);db.flush();return data(x)
+@app.get('/api/sales')
+def sales(status:str|None=None, customer_id:int|None=None, db:Session=Depends(get_db)):
+    query=select(Sale)
+    if status: query=query.where(Sale.status == status)
+    if customer_id: query=query.where(Sale.customer_id == customer_id)
+    return [data(item) for item in db.scalars(query.order_by(Sale.created_at.desc())).all()]
 @app.post('/api/sales/{sale_id}/finalize')
 def sale_finalize(sale_id:int,account_id:int|None=None,db:Session=Depends(get_db)):
     x=db.get(Sale,sale_id)
@@ -193,6 +204,14 @@ def backup(db:Session=Depends(get_db)):
         fail(str(error))
     audit(db, 'create', 'backup', 0, result['path'])
     return result
+@app.get('/api/reports/sales')
+def sales_report(db:Session=Depends(get_db)):
+    rows=db.scalars(select(Sale).where(Sale.status == 'finalized').order_by(Sale.created_at.desc())).all()
+    return {'count':len(rows), 'total':str(sum((item.total for item in rows), Decimal('0'))), 'documents':[data(item) for item in rows]}
+@app.get('/api/reports/purchases')
+def purchases_report(db:Session=Depends(get_db)):
+    rows=db.scalars(select(Purchase).where(Purchase.status == 'finalized').order_by(Purchase.created_at.desc())).all()
+    return {'count':len(rows), 'total':str(sum((item.total for item in rows), Decimal('0'))), 'documents':[data(item) for item in rows]}
 @app.get('/api/reports/profit-loss')
 def profit_loss(db:Session=Depends(get_db)):
     sales=db.scalars(select(Sale).where(Sale.status=='finalized')).all(); returns=db.scalars(select(SalesReturn)).all(); expenses=db.scalars(select(Expense)).all(); revenue=sum((s.total for s in sales),Decimal('0'))-sum((r.total for r in returns),Decimal('0')); cogs=sum((i.quantity*i.unit_cost_at_sale for s in sales for i in s.items),Decimal('0'))-sum((i.quantity*db.get(SaleItem,i.sale_item_id).unit_cost_at_sale for r in returns for i in r.items),Decimal('0')); operating=sum((x.amount for x in expenses),Decimal('0')); return {'revenue':str(revenue),'cogs':str(cogs),'gross_profit':str(revenue-cogs),'operating_expenses':str(operating),'net_profit':str(revenue-cogs-operating)}

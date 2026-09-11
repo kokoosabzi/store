@@ -88,3 +88,15 @@ def test_low_stock_notification_is_exposed():
     notifications=client.get('/api/notifications').json()
     assert notifications[0]['notification_type']=='low_stock'
     assert 'کالای هشدار' in notifications[0]['message']
+
+def test_document_lists_and_reports_only_include_finalized_documents():
+    account=client.post('/api/accounts',params={'name':'صندوق'}).json()
+    supplier=client.post('/api/suppliers',json={'name':'تامین'}).json()
+    product=client.post('/api/products',json={'name':'کالای گزارش'}).json()
+    purchase=client.post('/api/purchases/draft',json={'supplier_id':supplier['id'],'items':[{'product_id':product['id'],'quantity':'1','unit_price':'50'}]}).json()
+    assert client.get('/api/purchases',params={'status':'draft'}).json()[0]['id']==purchase['id']
+    client.post(f"/api/purchases/{purchase['id']}/finalize",params={'account_id':account['id']})
+    sale=client.post('/api/sales/draft',json={'items':[{'product_id':product['id'],'quantity':'1','unit_price':'80'}],'paid_amount':'80'}).json()
+    client.post(f"/api/sales/{sale['id']}/finalize",params={'account_id':account['id']})
+    assert client.get('/api/reports/purchases').json()['total']=='50.00'
+    assert client.get('/api/reports/sales').json()['total']=='80.00'
