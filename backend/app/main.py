@@ -34,7 +34,7 @@ def products(q:str|None=None,db:Session=Depends(get_db)):
     return [data(x) for x in db.scalars(query.order_by(Product.name)).all()]
 @app.post('/api/products',status_code=201)
 def create_product(body:ProductIn,db:Session=Depends(get_db)):
-    item=Product(**body.model_dump(),code=body.code or make_code('PRD',db,Product)); db.add(item); db.flush(); audit(db,'create','product',item.id); return data(item)
+    item=Product(**body.model_dump(exclude={'code'}),code=body.code or make_code('PRD',db,Product)); db.add(item); db.flush(); audit(db,'create','product',item.id); return data(item)
 @app.get('/api/products/barcode/{barcode}')
 def barcode(barcode:str,db:Session=Depends(get_db)):
     item=db.scalar(select(Product).where(Product.barcode==barcode));
@@ -212,10 +212,6 @@ def sales_report(db:Session=Depends(get_db)):
 def purchases_report(db:Session=Depends(get_db)):
     rows=db.scalars(select(Purchase).where(Purchase.status == 'finalized').order_by(Purchase.created_at.desc())).all()
     return {'count':len(rows), 'total':str(sum((item.total for item in rows), Decimal('0'))), 'documents':[data(item) for item in rows]}
-@app.get('/api/reports/profit-loss')
-def profit_loss(db:Session=Depends(get_db)):
-    sales=db.scalars(select(Sale).where(Sale.status=='finalized')).all(); returns=db.scalars(select(SalesReturn)).all(); expenses=db.scalars(select(Expense)).all(); revenue=sum((s.total for s in sales),Decimal('0'))-sum((r.total for r in returns),Decimal('0')); cogs=sum((i.quantity*i.unit_cost_at_sale for s in sales for i in s.items),Decimal('0'))-sum((i.quantity*db.get(SaleItem,i.sale_item_id).unit_cost_at_sale for r in returns for i in r.items),Decimal('0')); operating=sum((x.amount for x in expenses),Decimal('0')); return {'revenue':str(revenue),'cogs':str(cogs),'gross_profit':str(revenue-cogs),'operating_expenses':str(operating),'net_profit':str(revenue-cogs-operating)}
-@app.get('/api/reports/receivables')
-def receivables(db:Session=Depends(get_db)): return [data(x) for x in db.scalars(select(Customer).where(Customer.balance>0)).all()]
-@app.get('/api/reports/payables')
-def payables(db:Session=Depends(get_db)): return [data(x) for x in db.scalars(select(Supplier).where(Supplier.balance>0)).all()]
+@app.get('/api/audit')
+def audit_log(db:Session=Depends(get_db)):
+    return [data(item) for item in db.scalars(select(AuditLog).order_by(AuditLog.id.desc())).all()]
