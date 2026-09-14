@@ -38,7 +38,7 @@ def import_products(db: Session, content: bytes) -> dict:
             if duplicate:
                 skipped += 1
                 continue
-            values = {field: Decimal(row[field] or '0') for field in ('current_purchase_price', 'retail_price', 'wholesale_price', 'min_stock')}
+            values = {field: Decimal(row.get(field) or '0') for field in ('current_purchase_price', 'retail_price', 'wholesale_price', 'min_stock')}
             product = Product(code=code or f'IMP-{row_number:06d}', barcode=barcode, name=name, brand=(row.get('brand') or '').strip() or None, **values)
             db.add(product)
             created += 1
