@@ -69,6 +69,8 @@ def customers(db:Session=Depends(get_db)): return [data(x) for x in db.scalars(s
 @app.post('/api/suppliers',status_code=201)
 def create_supplier(body:PartyIn,db:Session=Depends(get_db)):
     x=Supplier(name=body.name,code=body.code or make_code('SUP',db,Supplier),mobile=body.mobile);db.add(x);db.flush();return data(x)
+@app.get('/api/accounts')
+def accounts(db:Session=Depends(get_db)): return [data(x) for x in db.scalars(select(Account).where(Account.is_active == True).order_by(Account.name)).all()]
 @app.post('/api/accounts',status_code=201)
 def create_account(name:str,account_type:str='cash',db:Session=Depends(get_db)):
     x=Account(name=name,account_type=account_type);db.add(x);db.flush();return data(x)
@@ -103,7 +105,7 @@ def sale_finalize(sale_id:int,account_id:int|None=None,db:Session=Depends(get_db
 @app.post('/api/sales/{sale_id}/returns', status_code=201)
 def create_sales_return(sale_id:int, body:SalesReturnIn, db:Session=Depends(get_db)):
     sale=db.get(Sale, sale_id)
-    if not sale: fail('فروش پیدا نشد.', 404)
+    if not sale: fail('فروش پیدا نشد.',404)
     result=finalize_sales_return(db, sale, body)
     return data(result)
 @app.get('/api/returns')
