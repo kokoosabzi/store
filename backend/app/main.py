@@ -97,6 +97,13 @@ def sales(status:str|None=None, customer_id:int|None=None, db:Session=Depends(ge
     if status: query=query.where(Sale.status == status)
     if customer_id: query=query.where(Sale.customer_id == customer_id)
     return [data(item) for item in db.scalars(query.order_by(Sale.created_at.desc())).all()]
+@app.get('/api/sales/{sale_id}')
+def sale_detail(sale_id:int, db:Session=Depends(get_db)):
+    sale=db.get(Sale, sale_id)
+    if not sale: fail('فروش پیدا نشد.',404)
+    result=data(sale)
+    result['items']=[data(item) for item in sale.items]
+    return result
 @app.post('/api/sales/{sale_id}/finalize')
 def sale_finalize(sale_id:int,account_id:int|None=None,db:Session=Depends(get_db)):
     x=db.get(Sale,sale_id)
