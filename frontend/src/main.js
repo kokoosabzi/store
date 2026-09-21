@@ -13,7 +13,7 @@ const App = {
   setup() {
     const activeView = ref(router.current().id)
     const health = ref(null), dashboard = ref(null), products = ref([]), customers = ref([]), suppliers = ref([])
-    const accounts = ref([]), sales = ref([]), purchases = ref([]), error = ref(''), notice = ref(''), loading = ref(false)
+    const accounts = ref([]), sales = ref([]), purchases = ref([]), returns = ref([]), salesReport = ref({count:0,total:0,documents:[]}), purchasesReport = ref({count:0,total:0,documents:[]}), backups = ref([]), pinConfigured = ref(false), backupPin = ref(''), newPin = ref(''), currentPin = ref(''), restoreFile = ref(''), error = ref(''), notice = ref(''), loading = ref(false)
     const product = ref({ name:'', barcode:'', retail_price:0, min_stock:0 })
     const customer = ref({ name:'', phone:'', address:'' }), supplier = ref({ name:'', phone:'', address:'' })
     const cart=ref([]), saleCustomer=ref(''), saleAccount=ref(''), salePaid=ref(0), saleDiscount=ref(0), saleTax=ref(0), saleProductId=ref(''), saleQuantity=ref(1), saleSearch=ref('')
