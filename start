@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Local Commerce Core — راه‌اندازی محلی (Linux/macOS/WSL)
+# Windows: در PowerShell از «py -m venv .venv» و سپس دستورات معادل استفاده کنید.
+set -euo pipefail
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+cd "$ROOT"
+# تنظیمات اختیاری: LCC_DATABASE_URL، LCC_ALLOW_NEGATIVE_STOCK، LCC_HOST و LCC_PORT
+if [ ! -d .venv ]; then python3 -m venv .venv; fi
+. .venv/bin/activate
+pip install -r requirements.txt
+mkdir -p data backups
+export LCC_DATABASE_URL="${LCC_DATABASE_URL:-sqlite:///./data/local_commerce.db}"
+alembic upgrade head
+python -m uvicorn backend.app.main:app --host "${LCC_HOST:-127.0.0.1}" --port "${LCC_PORT:-8000}" --reload
+# API health: http://127.0.0.1:8000/api/health
+# رابط توسعهٔ Vue: cd frontend && npm install && npm run dev
