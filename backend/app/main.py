@@ -205,6 +205,11 @@ def restore(body:RestoreIn, db:Session=Depends(get_db)):
         return restore_backup(body.backup_name)
     except ValueError as error:
         fail(str(error))
+@app.get('/api/backups')
+def list_backups():
+    from .config import settings
+    settings.backup_dir.mkdir(parents=True, exist_ok=True)
+    return [{'name':item.name, 'size':item.stat().st_size, 'created_at':datetime.fromtimestamp(item.stat().st_mtime).isoformat()} for item in sorted(settings.backup_dir.glob('*.db'), key=lambda x:x.stat().st_mtime, reverse=True)]
 @app.post('/api/backups', status_code=201)
 def backup(db:Session=Depends(get_db)):
     try:
