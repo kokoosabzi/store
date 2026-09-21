@@ -71,7 +71,7 @@ def create_supplier(body:PartyIn,db:Session=Depends(get_db)):
     x=Supplier(name=body.name,code=body.code or make_code('SUP',db,Supplier),mobile=body.mobile);db.add(x);db.flush();return data(x)
 @app.get('/api/accounts')
 def accounts(db:Session=Depends(get_db)): return [data(x) for x in db.scalars(select(Account).where(Account.is_active == True).order_by(Account.name)).all()]
-@app.post('/api/accounts',status_code=201)
+@app.post('/api/accounts')
 def create_account(name:str,account_type:str='cash',db:Session=Depends(get_db)):
     x=Account(name=name,account_type=account_type);db.add(x);db.flush();return data(x)
 @app.post('/api/purchases/draft',status_code=201)
@@ -101,9 +101,7 @@ def sales(status:str|None=None, customer_id:int|None=None, db:Session=Depends(ge
 def sale_detail(sale_id:int, db:Session=Depends(get_db)):
     sale=db.get(Sale, sale_id)
     if not sale: fail('فروش پیدا نشد.',404)
-    result=data(sale)
-    result['items']=[data(item) for item in sale.items]
-    return result
+    result=data(sale); result['items']=[data(item) for item in sale.items]; return result
 @app.post('/api/sales/{sale_id}/finalize')
 def sale_finalize(sale_id:int,account_id:int|None=None,db:Session=Depends(get_db)):
     x=db.get(Sale,sale_id)
@@ -113,11 +111,9 @@ def sale_finalize(sale_id:int,account_id:int|None=None,db:Session=Depends(get_db
 def create_sales_return(sale_id:int, body:SalesReturnIn, db:Session=Depends(get_db)):
     sale=db.get(Sale, sale_id)
     if not sale: fail('فروش پیدا نشد.',404)
-    result=finalize_sales_return(db, sale, body)
-    return data(result)
+    return data(finalize_sales_return(db, sale, body))
 @app.get('/api/returns')
-def sales_returns(db:Session=Depends(get_db)):
-    return [data(item) for item in db.scalars(select(SalesReturn).order_by(SalesReturn.id.desc())).all()]
+def sales_returns(db:Session=Depends(get_db)): return [data(item) for item in db.scalars(select(SalesReturn).order_by(SalesReturn.id.desc())).all()]
 @app.get('/api/inventory')
 def inventory(db:Session=Depends(get_db)): return [data(x) for x in db.scalars(select(Product).where(Product.is_active==True)).all()]
 @app.get('/api/inventory/movements')
@@ -150,12 +146,9 @@ def export_products(db:Session=Depends(get_db)):
     return Response(content=product_csv(products), media_type='text/csv; charset=utf-8', headers={'Content-Disposition':'attachment; filename=products.csv'})
 @app.post('/api/import/products')
 def import_product_csv(file:UploadFile, db:Session=Depends(get_db)):
-    if not file.filename or not file.filename.lower().endswith('.csv'):
-        fail('فقط فایل CSV پذیرفته می‌شود.')
-    try:
-        result=import_products(db, file.file.read())
-    except ValueError as error:
-        fail(str(error))
+    if not file.filename or not file.filename.lower().endswith('.csv'): fail('فقط فایل CSV پذیرفته می‌شود.')
+    try: result=import_products(db, file.file.read())
+    except ValueError as error: fail(str(error))
     audit(db, 'import', 'product', 0, f"created={result['created']}; skipped={result['skipped_duplicates']}")
     return result
 @app.get('/api/notifications')
@@ -182,15 +175,20 @@ def dashboard(db:Session=Depends(get_db)):
     receivables=sum((item.balance for item in db.scalars(select(Customer).where(Customer.balance > 0)).all()), Decimal('0'))
     payables=sum((item.balance for item in db.scalars(select(Supplier).where(Supplier.balance > 0)).all()), Decimal('0'))
     return {'revenue':str(revenue), 'cogs':str(cogs), 'gross_profit':str(revenue-cogs), 'net_profit':str(revenue-cogs-operating_expenses), 'receivables':str(receivables), 'payables':str(payables), 'cash_bank_balance':str(sum((item.current_balance for item in accounts), Decimal('0'))), 'low_stock_count':low_stock_count}
+@app.get('/api/reports/profit-loss')
+def profit_loss_report(db:Session=Depends(get_db)):
+    finalized_sales=db.scalars(select(Sale).where(Sale.status == 'finalized')).all()
+    returns=db.scalars(select(SalesReturn)).all()
+    revenue=sum((sale.total for sale in finalized_sales), Decimal('0')) - sum((item.total for item in returns), Decimal('0'))
+    cogs=sum((line.quantity * line.unit_cost_at_sale for sale in finalized_sales for line in sale.items), Decimal('0')) - sum((line.quantity * db.get(SaleItem, line.sale_item_id).unit_cost_at_sale for item in returns for line in item.items), Decimal('0'))
+    return {'revenue':str(revenue), 'cogs':str(cogs), 'gross_profit':str(revenue-cogs)}
 @app.get('/api/security/status')
 def security_status(db:Session=Depends(get_db)):
-    settings=security_settings(db)
-    return {'pin_configured': settings is not None, 'must_change_pin': settings.must_change_pin if settings else True}
+    settings=security_settings(db); return {'pin_configured': settings is not None, 'must_change_pin': settings.must_change_pin if settings else True}
 @app.post('/api/security/setup-pin', status_code=201)
 def setup_pin(body:PinSetupIn, db:Session=Depends(get_db)):
     if security_settings(db): fail('PIN مدیر از قبل تنظیم شده است.', 409)
-    settings=SecuritySettings(id=1, pin_hash=hash_pin(body.pin), must_change_pin=False)
-    db.add(settings); audit(db, 'create', 'security_settings', settings.id); return {'configured': True}
+    settings=SecuritySettings(id=1, pin_hash=hash_pin(body.pin), must_change_pin=False); db.add(settings); audit(db, 'create', 'security_settings', settings.id); return {'configured': True}
 @app.post('/api/security/change-pin')
 def change_pin(body:PinChangeIn, db:Session=Depends(get_db)):
     settings=security_settings(db)
@@ -201,10 +199,8 @@ def restore(body:RestoreIn, db:Session=Depends(get_db)):
     settings=security_settings(db)
     if not settings or not verify_pin(body.pin, settings.pin_hash): fail('PIN مدیر صحیح نیست.', 403)
     engine.dispose()
-    try:
-        return restore_backup(body.backup_name)
-    except ValueError as error:
-        fail(str(error))
+    try: return restore_backup(body.backup_name)
+    except ValueError as error: fail(str(error))
 @app.get('/api/backups')
 def list_backups():
     from .config import settings
@@ -212,12 +208,9 @@ def list_backups():
     return [{'name':item.name, 'size':item.stat().st_size, 'created_at':datetime.fromtimestamp(item.stat().st_mtime).isoformat()} for item in sorted(settings.backup_dir.glob('*.db'), key=lambda x:x.stat().st_mtime, reverse=True)]
 @app.post('/api/backups', status_code=201)
 def backup(db:Session=Depends(get_db)):
-    try:
-        result = create_backup()
-    except ValueError as error:
-        fail(str(error))
-    audit(db, 'create', 'backup', 0, result['path'])
-    return result
+    try: result=create_backup()
+    except ValueError as error: fail(str(error))
+    audit(db, 'create', 'backup', 0, result['path']); return result
 @app.get('/api/reports/sales')
 def sales_report(db:Session=Depends(get_db)):
     rows=db.scalars(select(Sale).where(Sale.status == 'finalized').order_by(Sale.created_at.desc())).all()
@@ -227,5 +220,4 @@ def purchases_report(db:Session=Depends(get_db)):
     rows=db.scalars(select(Purchase).where(Purchase.status == 'finalized').order_by(Purchase.created_at.desc())).all()
     return {'count':len(rows), 'total':str(sum((item.total for item in rows), Decimal('0'))), 'documents':[data(item) for item in rows]}
 @app.get('/api/audit')
-def audit_log(db:Session=Depends(get_db)):
-    return [data(item) for item in db.scalars(select(AuditLog).order_by(AuditLog.id.desc())).all()]
+def audit_log(db:Session=Depends(get_db)): return [data(item) for item in db.scalars(select(AuditLog).order_by(AuditLog.id.desc())).all()]
