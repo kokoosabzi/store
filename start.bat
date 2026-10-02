@@ -1,40 +1,73 @@
 @echo off
 setlocal
-title Local Commerce Core - Local Launcher
+
+title Local Commerce Core - Start
+
 cd /d "%~dp0"
 
+echo ==========================================
+echo   LOCAL COMMERCE CORE
+echo   STARTING PROJECT
+echo ==========================================
+echo.
+
 if not exist ".venv\Scripts\python.exe" (
-  py -m venv .venv
-  if errorlevel 1 (echo Python is required.& pause& exit /b 1)
+    echo ERROR: Virtual environment not found.
+    echo Please run setup.bat first.
+    pause
+    exit /b 1
 )
 
-call ".venv\Scripts\activate.bat"
-echo Installing backend dependencies...
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-if errorlevel 1 (pause& exit /b 1)
+if not exist "data" mkdir "data"
+if not exist "backups" mkdir "backups"
 
-if not exist "data" mkdir data
-if not exist "backups" mkdir backups
-set "LCC_DATABASE_URL=sqlite:///./data/local_commerce.db"
+echo [1/3] Checking database migrations...
+echo.
 
-echo Applying database migrations...
-alembic upgrade head
-if errorlevel 1 (pause& exit /b 1)
+set "PYTHONPATH=%CD%"
 
-echo Starting FastAPI backend...
-start "Local Commerce Core API" cmd /k "cd /d ""%~dp0"" && call .venv\Scripts\activate.bat && python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload"
+".venv\Scripts\python.exe" -m alembic upgrade head
 
-if exist "frontend\package.json" (
-  echo Installing/starting Vue frontend...
-  cd /d "%~dp0frontend"
-  if not exist "node_modules" npm install
-  start "Local Commerce Core UI" cmd /k "cd /d ""%~dp0frontend"" && npm run dev"
-) else (
-  echo Frontend directory not found.
+if errorlevel 1 (
+    echo.
+    echo ERROR: Database migration failed.
+    pause
+    exit /b 1
 )
 
-echo Backend: http://127.0.0.1:8000/api/health
-echo Frontend: check the Vite URL in the UI terminal.
-pause
+echo.
+echo [2/3] Starting Backend...
+echo.
+
+start "LCC Backend" cmd /k "cd /d "%~dp0" & set PYTHONPATH=%~dp0 & .venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload"
+
+timeout /t 3 /nobreak >nul
+
+echo.
+echo [3/3] Starting Frontend...
+echo.
+
+start "LCC Frontend" cmd /k "cd /d "%~dp0frontend" & npm run dev"
+
+echo.
+echo ==========================================
+echo   PROJECT STARTED
+echo ==========================================
+echo.
+echo Frontend:
+echo http://localhost:5173/
+echo.
+echo Backend:
+echo http://127.0.0.1:8000/
+echo.
+echo API Docs:
+echo http://127.0.0.1:8000/docs
+echo.
+echo ==========================================
+echo.
+
+timeout /t 3 /nobreak >nul
+
+start "" "http://localhost:5173/"
+
 endlocal
