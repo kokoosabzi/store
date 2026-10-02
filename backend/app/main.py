@@ -69,6 +69,9 @@ def customers(db:Session=Depends(get_db)): return [data(x) for x in db.scalars(s
 @app.post('/api/suppliers',status_code=201)
 def create_supplier(body:PartyIn,db:Session=Depends(get_db)):
     x=Supplier(name=body.name,code=body.code or make_code('SUP',db,Supplier),mobile=body.mobile);db.add(x);db.flush();return data(x)
+@app.get('/api/suppliers')
+def suppliers(db:Session=Depends(get_db)):
+    return [data(x) for x in db.scalars(select(Supplier)).all()]
 @app.get('/api/accounts')
 def accounts(db:Session=Depends(get_db)): return [data(x) for x in db.scalars(select(Account).where(Account.is_active == True).order_by(Account.name)).all()]
 @app.post('/api/accounts')
