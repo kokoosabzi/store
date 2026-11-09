@@ -1,5 +1,6 @@
 import { computed, createApp, onMounted, ref } from 'vue'
 import './style.css'
+import './koko-workspace-tabs.js'
 import { router, navigate } from './router.js'
 
 const api = async (path, options = {}) => {
@@ -58,7 +59,7 @@ const App = {
   },
   template:`
   <div class="app-shell"><aside class="sidebar"><div class="brand"><span>LC</span><strong>هسته بازرگانی</strong><small>محلی و آفلاین</small></div><nav><button v-for="item in nav" :key="item.id" :class="{active:activeView===item.id}" @click="navigate(item.path)">{{item.label}}</button></nav><footer v-if="health" class="status"><i></i> سرویس محلی آماده است</footer></aside>
-  <main><header><div><p class="eyebrow">LOCAL COMMERCE CORE</p><h1>{{title}}</h1></div><button class="refresh" @click="refresh" :disabled="loading">{{loading?'در حال بروزرسانی…':'بروزرسانی'}}</button></header><p v-if="error" class="message error">{{error}}</p><p v-if="notice" class="message success">{{notice}}</p>
+  <main><header><div><p class="eyebrow">LOCAL COMMERCE CORE</p><h1>{{title}}</h1></div><button class="refresh" @click="refresh" :disabled="loading">{{loading?'در حال بروزرسانی…':'بروزرسانی'}}</button></header><div id="koko-workspace-tabs" class="koko-workspace-tabs" role="tablist" aria-label="صفحه‌های باز"></div><p v-if="error" class="message error">{{error}}</p><p v-if="notice" class="message success">{{notice}}</p>
   <template v-if="activeView==='dashboard'">
     <section class="koko-welcome">
       <div><span class="koko-eyebrow">LOCAL COMMERCE CORE</span><h2>نمای کلی فروشگاه</h2><p>وضعیت فروش، سود، مطالبات و موجودی در یک نگاه</p></div>
