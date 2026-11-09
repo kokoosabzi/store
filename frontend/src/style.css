@@ -20,3 +20,7 @@
   .app-shell>main>header{align-items:flex-start}
 }
 @media(prefers-reduced-motion:reduce){.app-shell>.sidebar{transition:none}}
+
+@media(max-width:900px){
+  html[dir="rtl"] .app-shell>.sidebar.is-open{transform:translateX(0)}
+}
