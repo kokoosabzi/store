@@ -103,21 +103,22 @@ const App = {
   </template>
   <template v-else-if="activeView==='products'">
     <section class="two-col">
-      <form class="panel koko-form" @submit.prevent="addProduct">
-        <section class="koko-form-section"><header><h2>ثبت کالای جدید</h2></header>
-          <div class="koko-form-grid">
-            <label class="koko-field">نام کالا<input v-model="product.name" required></label>
-            <label class="koko-field">بارکد<input v-model="product.barcode"></label>
-            <label class="koko-field">قیمت فروش<input v-model.number="product.retail_price" type="number" min="0"></label>
-            <label class="koko-field">حداقل موجودی<input v-model.number="product.min_stock" type="number" min="0"></label>
-          </div>
-          <div class="koko-form-actions"><button class="koko-button" :disabled="loading">ثبت کالا</button></div>
-        </section>
+      <form class="panel koko-form koko-form-section" @submit.prevent="addProduct">
+        <header><h2>ثبت کالای جدید</h2></header>
+        <div class="koko-form-grid">
+          <label class="koko-field">نام کالا<input class="koko-control" v-model="product.name" required></label>
+          <label class="koko-field">بارکد<input class="koko-control" v-model="product.barcode"></label>
+          <label class="koko-field">قیمت فروش<input class="koko-control" v-model.number="product.retail_price" type="number" min="0"></label>
+          <label class="koko-field">حداقل موجودی<input class="koko-control" v-model.number="product.min_stock" type="number" min="0"></label>
+        </div>
+        <div class="koko-form-actions"><button class="koko-button" type="submit">ثبت کالا</button></div>
       </form>
-      <section class="panel koko-form-section"><header><h2>کالاها</h2></header>
-        <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>کد</th><th>نام</th><th>موجودی</th><th>قیمت فروش</th></tr></thead>
-          <tbody><tr v-for="item in products" :key="item.id"><td>{{item.code}}</td><td>{{item.name}}</td><td>{{item.current_stock}}</td><td>{{money(item.retail_price)}}</td></tr><tr v-if="!products.length"><td colspan="4" class="koko-table-empty">هنوز کالایی ثبت نشده است.</td></tr></tbody>
-        </table></div>
+      <section class="panel koko-form-section">
+        <header><h2>کالاها</h2></header>
+        <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>کد</th><th>نام</th><th>موجودی</th><th>قیمت فروش</th></tr></thead><tbody>
+          <tr v-for="item in products" :key="item.id"><td>{{item.code}}</td><td>{{item.name}}</td><td>{{item.current_stock}}</td><td>{{money(item.retail_price)}}</td></tr>
+          <tr v-if="!products.length"><td colspan="4" class="koko-table-empty">هنوز کالایی ثبت نشده است.</td></tr>
+        </tbody></table></div>
       </section>
     </section>
   </template>
@@ -126,38 +127,42 @@ const App = {
   <template v-else-if="activeView==='purchases'"><section class="sales-layout"><section class="panel"><div class="section-head"><h2>فاکتور خرید</h2><button class="secondary" type="button" @click="clearPurchase">پاک کردن</button></div><div class="form-row"><label>جستجوی کالا<input v-model="purchaseSearch" placeholder="نام، کد یا بارکد"></label><label>تعداد<input v-model.number="purchaseQuantity" type="number" min=".001" step=".001"></label></div><div class="form-row"><label>انتخاب کالا<select v-model="purchaseProductId"><option value="">انتخاب کنید</option><option v-for="item in filteredPurchaseProducts" :key="item.id" :value="item.id">{{item.name}}</option></select></label><label>قیمت خرید واحد<input v-model.number="purchasePrice" type="number" min="0"></label></div><button class="primary" type="button" @click="addPurchaseItem">افزودن به فاکتور خرید</button><table><thead><tr><th>کالا</th><th>تعداد</th><th>قیمت</th><th>جمع</th><th></th></tr></thead><tbody><tr v-for="item in purchaseCart" :key="item.product_id"><td>{{item.name}}</td><td>{{item.quantity}}</td><td>{{money(item.unit_price)}}</td><td>{{money(item.quantity*item.unit_price-item.discount)}}</td><td><button class="icon-button" type="button" @click="removePurchaseItem(item.product_id)">حذف</button></td></tr><tr v-if="!purchaseCart.length"><td colspan="5">هنوز کالایی به فاکتور اضافه نشده است.</td></tr></tbody></table></section><section class="panel"><h2>تسویه خرید</h2><label>تأمین‌کننده<select v-model="purchaseSupplier"><option value="">انتخاب تأمین‌کننده</option><option v-for="item in suppliers" :key="item.id" :value="item.id">{{item.name}} — مانده {{money(item.balance)}}</option></select></label><label>حساب پرداخت<select v-model="purchaseAccount"><option value="">انتخاب حساب</option><option v-for="item in accounts" :key="item.id" :value="item.id">{{item.name}} — {{money(item.current_balance)}} ریال</option></select></label><button v-if="!accounts.length" class="secondary full" type="button" @click="createAccount">ایجاد حساب صندوق</button><div class="form-row"><label>تخفیف<input v-model.number="purchaseDiscount" type="number" min="0"></label><label>مالیات<input v-model.number="purchaseTax" type="number" min="0"></label></div><label>مبلغ پرداختی<input v-model.number="purchasePaid" type="number" min="0"></label><dl class="totals"><div><dt>جمع کالاها</dt><dd>{{money(purchaseSubtotal)}} ریال</dd></div><div><dt>مبلغ نهایی</dt><dd>{{money(purchaseTotal)}} ریال</dd></div><div><dt>مانده تأمین‌کننده</dt><dd>{{money(purchaseRemaining)}} ریال</dd></div></dl><button class="primary full" type="button" :disabled="loading||!purchaseCart.length" @click="finalizePurchase">ثبت و نهایی‌سازی خرید</button></section></section><section class="panel"><h2>خریدهای اخیر</h2><table><thead><tr><th>شماره</th><th>تاریخ</th><th>مبلغ</th><th>وضعیت</th></tr></thead><tbody><tr v-for="item in purchases.slice(0,10)" :key="item.id"><td>{{item.document_number||'پیش‌نویس'}}</td><td>{{item.created_at?new Date(item.created_at).toLocaleString('fa-IR'):'-'}}</td><td>{{money(item.total)}} ریال</td><td>{{item.status==='finalized'?'نهایی':'پیش‌نویس'}}</td></tr><tr v-if="!purchases.length"><td colspan="4">هنوز خریدی ثبت نشده است.</td></tr></tbody></table></section></template>
   <template v-else-if="activeView==='customers'">
     <section class="two-col">
-      <form class="panel koko-form" @submit.prevent="addCustomer"><section class="koko-form-section"><header><h2>ثبت مشتری</h2></header>
+      <form class="panel koko-form koko-form-section" @submit.prevent="addCustomer">
+        <header><h2>ثبت مشتری</h2></header>
         <div class="koko-form-grid">
-          <label class="koko-field">نام مشتری<input v-model="customer.name" required></label>
-          <label class="koko-field">تلفن<input v-model="customer.phone" inputmode="tel"></label>
-          <label class="koko-field">آدرس<input v-model="customer.address"></label>
+          <label class="koko-field">نام مشتری<input class="koko-control" v-model="customer.name" required></label>
+          <label class="koko-field">تلفن<input class="koko-control" v-model="customer.phone" inputmode="tel"></label>
+          <label class="koko-field">آدرس<input class="koko-control" v-model="customer.address"></label>
         </div>
-        <div class="koko-form-actions"><button class="koko-button" :disabled="loading">ثبت مشتری</button></div>
-      </section></form>
-      <section class="panel koko-form-section"><header><h2>مشتریان</h2></header><div class="koko-table-wrap">
-        <table class="koko-table"><thead><tr><th>نام</th><th>تلفن</th><th>مانده</th></tr></thead><tbody>
+        <div class="koko-form-actions"><button class="koko-button" type="submit">ثبت مشتری</button></div>
+      </form>
+      <section class="panel koko-form-section">
+        <header><h2>مشتریان</h2></header>
+        <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>نام</th><th>تلفن</th><th>مانده</th></tr></thead><tbody>
           <tr v-for="item in customers" :key="item.id"><td>{{item.name}}</td><td>{{item.phone||'-'}}</td><td>{{money(item.balance)}} ریال</td></tr>
           <tr v-if="!customers.length"><td colspan="3" class="koko-table-empty">هنوز مشتری ثبت نشده است.</td></tr>
-        </tbody></table>
-      </div></section>
+        </tbody></table></div>
+      </section>
     </section>
   </template>
   <template v-else-if="activeView==='suppliers'">
     <section class="two-col">
-      <form class="panel koko-form" @submit.prevent="addSupplier"><section class="koko-form-section"><header><h2>ثبت تأمین‌کننده</h2></header>
+      <form class="panel koko-form koko-form-section" @submit.prevent="addSupplier">
+        <header><h2>ثبت تأمین‌کننده</h2></header>
         <div class="koko-form-grid">
-          <label class="koko-field">نام تأمین‌کننده<input v-model="supplier.name" required></label>
-          <label class="koko-field">تلفن<input v-model="supplier.phone" inputmode="tel"></label>
-          <label class="koko-field">آدرس<input v-model="supplier.address"></label>
+          <label class="koko-field">نام تأمین‌کننده<input class="koko-control" v-model="supplier.name" required></label>
+          <label class="koko-field">تلفن<input class="koko-control" v-model="supplier.phone" inputmode="tel"></label>
+          <label class="koko-field">آدرس<input class="koko-control" v-model="supplier.address"></label>
         </div>
-        <div class="koko-form-actions"><button class="koko-button" :disabled="loading">ثبت تأمین‌کننده</button></div>
-      </section></form>
-      <section class="panel koko-form-section"><header><h2>تأمین‌کنندگان</h2></header><div class="koko-table-wrap">
-        <table class="koko-table"><thead><tr><th>نام</th><th>تلفن</th><th>مانده</th></tr></thead><tbody>
+        <div class="koko-form-actions"><button class="koko-button" type="submit">ثبت تأمین‌کننده</button></div>
+      </form>
+      <section class="panel koko-form-section">
+        <header><h2>تأمین‌کنندگان</h2></header>
+        <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>نام</th><th>تلفن</th><th>مانده</th></tr></thead><tbody>
           <tr v-for="item in suppliers" :key="item.id"><td>{{item.name}}</td><td>{{item.phone||'-'}}</td><td>{{money(item.balance)}} ریال</td></tr>
-          <tr v-if="!suppliers.length"><td colspan="3" class="koko-table-empty">هنوز تأمین‌کننده ثبت نشده است.</td></tr>
-        </tbody></table>
-      </div></section>
+          <tr v-if="!suppliers.length"><td colspan="3" class="koko-table-empty">هنوز تأمین‌کننده‌ای ثبت نشده است.</td></tr>
+        </tbody></table></div>
+      </section>
     </section>
   </template>
   <template v-else-if="activeView==='payments'"><section class="two-col"><form class="panel" @submit.prevent="submitPayment"><h2>دریافت و پرداخت</h2><div class="form-row"><label>نوع عملیات<select v-model="paymentType"><option value="customer">دریافت از مشتری</option><option value="supplier">پرداخت به تأمین‌کننده</option></select></label><label>حساب<select v-model="paymentAccount"><option value="">انتخاب حساب</option><option v-for="item in accounts" :key="item.id" :value="item.id">{{item.name}} — {{money(item.current_balance)}} ریال</option></select></label></div><label v-if="paymentType==='customer'">مشتری<select v-model="paymentParty"><option value="">انتخاب مشتری</option><option v-for="item in customers" :key="item.id" :value="item.id">{{item.name}} — مانده {{money(item.balance)}}</option></select></label><label v-else>تأمین‌کننده<select v-model="paymentParty"><option value="">انتخاب تأمین‌کننده</option><option v-for="item in suppliers" :key="item.id" :value="item.id">{{item.name}} — مانده {{money(item.balance)}}</option></select></label><label>مبلغ<input v-model.number="paymentAmount" type="number" min="0.01" step="0.01"></label><label>یادداشت<input v-model="paymentNote"></label><button class="primary full" :disabled="loading">ثبت عملیات</button></form><form class="panel" @submit.prevent="submitExpense"><h2>ثبت هزینه</h2><label>نوع هزینه<input v-model="expenseType" placeholder="مثلاً حمل، اجاره، خدمات"></label><label>مبلغ<input v-model.number="expenseAmount" type="number" min="0.01" step="0.01"></label><label>حساب پرداخت<select v-model="expenseAccount"><option value="">انتخاب حساب</option><option v-for="item in accounts" :key="item.id" :value="item.id">{{item.name}} — {{money(item.current_balance)}} ریال</option></select></label><label>یادداشت<input v-model="expenseNote"></label><button class="primary full" :disabled="loading">ثبت هزینه</button></form></section><section class="panel"><h2>وضعیت حساب‌ها</h2><table><thead><tr><th>حساب</th><th>نوع</th><th>مانده</th></tr></thead><tbody><tr v-for="item in accounts" :key="item.id"><td>{{item.name}}</td><td>{{item.account_type}}</td><td>{{money(item.current_balance)}} ریال</td></tr><tr v-if="!accounts.length"><td colspan="3">هنوز حسابی ثبت نشده است.</td></tr></tbody></table></section></template>
