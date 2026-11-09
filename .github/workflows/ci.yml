@@ -23,7 +23,7 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q backend tests migrations
       - name: Run backend tests
-        run: python -m pytest -q
+        run: python -m pytest -q --ignore=tests/test_koko_ui_browser.py
 
   frontend:
     name: Frontend build and browser UI tests
