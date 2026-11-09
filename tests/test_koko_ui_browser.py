@@ -185,3 +185,16 @@ def test_store_settings_and_backup_screens_keep_actions_and_use_koko_ui():
         assert hook in backup
     assert "koko-table-wrap" in backup and 'class="koko-table"' in backup
     assert "koko-form-section" in backup and "koko-button is-danger" in backup
+
+
+
+def test_store_dashboard_exposes_labeled_metric_and_quick_action_regions():
+    source = (ROOT / "frontend/src/main.js").read_text(encoding="utf-8")
+    start = source.index("activeView==='dashboard'")
+    end = source.index("</template>", start)
+    dashboard = source[start:end]
+    assert 'aria-label="شاخص‌های مدیریتی فروشگاه"' in dashboard
+    assert 'aria-label="عملیات سریع فروشگاه"' in dashboard
+    assert dashboard.count('type="button" class="koko-action') == 6
+    for route in ("/sales", "/purchases", "/products", "/inventory", "/customers", "/reports"):
+        assert f"navigate('{route}')" in dashboard
