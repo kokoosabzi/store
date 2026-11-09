@@ -103,3 +103,40 @@ def test_store_koko_theme_and_workspace_tabs(page, vite_url):
     expect(page.locator("#store-sidebar")).to_have_class("sidebar is-open")
     page.get_by_role("button", name="مشتریان", exact=True).click()
     expect(page.locator("#store-sidebar")).not_to_have_class("is-open")
+
+
+def test_store_catalog_and_people_pages_use_koko_form_and_table_contracts():
+    source = (ROOT / "frontend/src/main.js").read_text(encoding="utf-8")
+    for view, handler, model_fields, rows in (
+        ("products", "addProduct", ("product.name", "product.barcode", "product.retail_price", "product.min_stock"), ("products",)),
+        ("customers", "addCustomer", ("customer.name", "customer.phone", "customer.address"), ("customers",)),
+        ("suppliers", "addSupplier", ("supplier.name", "supplier.phone", "supplier.address"), ("suppliers",)),
+    ):
+        start = source.index(f"activeView==='{view}'")
+        end = source.index("</template>", start)
+        section = source[start:end]
+        assert f"@submit.prevent={handler}" in section
+        assert "koko-form-section" in section and "koko-form-grid" in section
+        assert "koko-form-actions" in section
+        assert "koko-table-wrap" in section and 'class="koko-table"' in section
+        for field in model_fields:
+            assert f"v-model" in section and field in section
+        for row in rows:
+            assert f"v-for=\"item in {row}\"" in section
+
+
+def test_store_sales_and_purchase_keep_workflow_handlers_and_standardize_tables():
+    source = (ROOT / "frontend/src/main.js").read_text(encoding="utf-8")
+    for view, hooks, tables in (
+        ("sales", ("clearSale", "addToCart", "removeFromCart", "finalizeSale", "saleCustomer", "saleAccount", "salePaid"), 2),
+        ("purchases", ("clearPurchase", "addPurchaseItem", "removePurchaseItem", "finalizePurchase", "purchaseSupplier", "purchaseAccount", "purchasePaid"), 2),
+    ):
+        start = source.index(f"activeView==='{view}'")
+        end = source.index("</template>", start)
+        section = source[start:end]
+        assert section.count('class="koko-table-wrap"') == tables
+        assert section.count('class="koko-table"') == tables
+        assert section.count("koko-form-section") >= 3
+        assert "koko-field" in section and "koko-button" in section
+        for hook in hooks:
+            assert hook in section
