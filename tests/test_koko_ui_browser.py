@@ -92,3 +92,10 @@ def test_store_koko_theme_and_workspace_tabs(page, vite_url):
     expect(page.locator("html")).to_have_attribute("data-koko-theme", "pastel")
     page.set_viewport_size({"width": 390, "height": 844})
     assert page.locator("body").evaluate("(el) => el.scrollWidth <= window.innerWidth")
+
+    toggle = page.get_by_role("button", name="☰ منو")
+    expect(toggle).to_be_visible()
+    toggle.click()
+    expect(page.locator("#store-sidebar")).to_have_class("sidebar is-open")
+    page.get_by_role("button", name="مشتریان", exact=True).click()
+    expect(page.locator("#store-sidebar")).not_to_have_class("is-open")
