@@ -167,3 +167,21 @@ def test_store_inventory_payments_returns_and_reports_keep_workflows_and_use_kok
     assert '@submit.prevent="submitExpense"' in payments
     returns = source[source.index("activeView==='returns'"):source.index("</template>", source.index("activeView==='returns'"))]
     assert '@submit.prevent="submitReturn"' in returns
+
+
+def test_store_settings_and_backup_screens_keep_actions_and_use_koko_ui():
+    source = (ROOT / "frontend/src/main.js").read_text(encoding="utf-8")
+    settings_start = source.index("activeView==='settings'")
+    settings = source[settings_start:source.index("</template>", settings_start)]
+    for hook in ("pinConfigured", "setupPin", "changePin", "newPin", "currentPin",
+                 "savePrinterSettings", "storeName", "printerWidth", "receiptFooter"):
+        assert hook in settings
+    assert "koko-form-section" in settings and "koko-field" in settings
+    assert "koko-control" in settings and "koko-form-actions" in settings
+
+    backup_start = source.index("activeView==='backup'")
+    backup = source[backup_start:source.index("</template>", backup_start)]
+    for hook in ("createBackup", "restoreBackup", "restoreFile", "backupPin", "backups"):
+        assert hook in backup
+    assert "koko-table-wrap" in backup and 'class="koko-table"' in backup
+    assert "koko-form-section" in backup and "koko-button is-danger" in backup
