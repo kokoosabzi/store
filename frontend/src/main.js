@@ -330,8 +330,55 @@ const App = {
       </section>
     </section>
   </template>
-  <template v-else-if="activeView==='settings'"><section class="two-col"><section class="panel"><h2>امنیت مدیر</h2><p class="message">{{pinConfigured?'PIN مدیر تنظیم شده است.':'هنوز PIN مدیر تنظیم نشده است.'}}</p><form v-if="!pinConfigured" @submit.prevent="setupPin"><label>PIN جدید<input v-model="newPin" type="password" inputmode="numeric" maxlength="12" required></label><button class="primary full" :disabled="loading">تنظیم PIN</button></form><form v-else @submit.prevent="changePin"><label>PIN فعلی<input v-model="currentPin" type="password" inputmode="numeric" maxlength="12" required></label><label>PIN جدید<input v-model="newPin" type="password" inputmode="numeric" maxlength="12" required></label><button class="primary full" :disabled="loading">تغییر PIN</button></form></section><section class="panel"><h2>چاپ فاکتور</h2><label>نام فروشگاه<input v-model="storeName" maxlength="120"></label><label>عرض رول<select v-model="printerWidth"><option value="58">۵۸ میلی‌متر</option><option value="80">۸۰ میلی‌متر</option></select></label><label>پایان فاکتور<input v-model="receiptFooter" maxlength="200"></label><button class="secondary full" type="button" @click="savePrinterSettings">ذخیره تنظیمات چاپ</button></section><section class="panel"><h2>وضعیت برنامه</h2><dl><div><dt>پایگاه داده</dt><dd>SQLite محلی</dd></div><div><dt>اجرا</dt><dd>آفلاین / محلی</dd></div></dl></section></section></template>
-  <template v-else-if="activeView==='backup'"><section class="two-col"><section class="panel"><h2>پشتیبان‌گیری</h2><p class="message">یک نسخهٔ سالم از پایگاه داده SQLite ایجاد می‌شود.</p><button class="primary full" :disabled="loading" @click="createBackup">ایجاد پشتیبان</button><h3>پشتیبان‌های موجود</h3><table><thead><tr><th>نام فایل</th><th>وضعیت</th></tr></thead><tbody><tr v-for="item in backups" :key="item.name"><td>{{item.name}}</td><td>آماده</td></tr><tr v-if="!backups.length"><td colspan="2">پشتیبانی موجود نیست.</td></tr></tbody></table></section><section class="panel"><h2>بازیابی</h2><label>فایل پشتیبان<select v-model="restoreFile"><option value="">انتخاب فایل</option><option v-for="item in backups" :key="item.name" :value="item.name">{{item.name}}</option></select></label><label>PIN مدیر<input v-model="backupPin" type="password" inputmode="numeric" maxlength="12"></label><p class="message">قبل از بازیابی، برنامه یک پشتیبان حفاظتی از دادهٔ فعلی ایجاد می‌کند.</p><button class="primary full" :disabled="loading||!restoreFile" @click="restoreBackup">بازیابی پشتیبان</button></section></section></template>
+  <template v-else-if="activeView==='settings'">
+    <section class="two-col">
+      <section class="panel koko-form-section">
+        <header><h2>امنیت مدیر</h2></header>
+        <p class="message">{{pinConfigured?'PIN مدیر تنظیم شده است.':'هنوز PIN مدیر تنظیم نشده است.'}}</p>
+        <form v-if="!pinConfigured" class="koko-form" @submit.prevent="setupPin">
+          <label class="koko-field">PIN جدید<input class="koko-control" v-model="newPin" type="password" inputmode="numeric" maxlength="12" required></label>
+          <div class="koko-form-actions"><button class="koko-button" :disabled="loading">تنظیم PIN</button></div>
+        </form>
+        <form v-else class="koko-form" @submit.prevent="changePin">
+          <label class="koko-field">PIN فعلی<input class="koko-control" v-model="currentPin" type="password" inputmode="numeric" maxlength="12" required></label>
+          <label class="koko-field">PIN جدید<input class="koko-control" v-model="newPin" type="password" inputmode="numeric" maxlength="12" required></label>
+          <div class="koko-form-actions"><button class="koko-button" :disabled="loading">تغییر PIN</button></div>
+        </form>
+      </section>
+      <section class="panel koko-form-section">
+        <header><h2>چاپ فاکتور</h2></header>
+        <label class="koko-field">نام فروشگاه<input class="koko-control" v-model="storeName" maxlength="120"></label>
+        <label class="koko-field">عرض رول<select class="koko-control" v-model="printerWidth"><option value="58">۵۸ میلی‌متر</option><option value="80">۸۰ میلی‌متر</option></select></label>
+        <label class="koko-field">پایان فاکتور<input class="koko-control" v-model="receiptFooter" maxlength="200"></label>
+        <div class="koko-form-actions"><button class="koko-button is-secondary" type="button" @click="savePrinterSettings">ذخیره تنظیمات چاپ</button></div>
+      </section>
+      <section class="panel koko-form-section">
+        <header><h2>وضعیت برنامه</h2></header>
+        <dl><div><dt>پایگاه داده</dt><dd>SQLite محلی</dd></div><div><dt>اجرا</dt><dd>آفلاین / محلی</dd></div></dl>
+      </section>
+    </section>
+  </template>
+  <template v-else-if="activeView==='backup'">
+    <section class="two-col">
+      <section class="panel koko-form-section">
+        <header><h2>پشتیبان‌گیری</h2></header>
+        <p class="message">یک نسخهٔ سالم از پایگاه داده SQLite ایجاد می‌شود.</p>
+        <div class="koko-form-actions"><button class="koko-button" :disabled="loading" @click="createBackup">ایجاد پشتیبان</button></div>
+        <h3>پشتیبان‌های موجود</h3>
+        <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>نام فایل</th><th>وضعیت</th></tr></thead><tbody>
+          <tr v-for="item in backups" :key="item.name"><td>{{item.name}}</td><td><span class="koko-badge is-success">آماده</span></td></tr>
+          <tr v-if="!backups.length"><td colspan="2" class="koko-table-empty">پشتیبانی موجود نیست.</td></tr>
+        </tbody></table></div>
+      </section>
+      <section class="panel koko-form-section">
+        <header><h2>بازیابی</h2></header>
+        <label class="koko-field">فایل پشتیبان<select class="koko-control" v-model="restoreFile"><option value="">انتخاب فایل</option><option v-for="item in backups" :key="item.name" :value="item.name">{{item.name}}</option></select></label>
+        <label class="koko-field">PIN مدیر<input class="koko-control" v-model="backupPin" type="password" inputmode="numeric" maxlength="12"></label>
+        <p class="message">قبل از بازیابی، برنامه یک پشتیبان حفاظتی از دادهٔ فعلی ایجاد می‌کند.</p>
+        <div class="koko-form-actions"><button class="koko-button is-danger" :disabled="loading||!restoreFile" @click="restoreBackup">بازیابی پشتیبان</button></div>
+      </section>
+    </section>
+  </template>
   <template v-else><section class="panel"><h2>{{title}}</h2><p class="message">این بخش در حال توسعه است. مسیر آن در برنامه ثبت شده و آماده اتصال به رابط کاربری مربوطه است.</p></section></template>
   </main></div>`
 }
