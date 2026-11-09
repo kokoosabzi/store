@@ -71,7 +71,7 @@ def test_store_koko_theme_and_workspace_tabs(page, vite_url):
     page.reload()
     expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
 
-    page.get_by_role("button", name="کالاها").click()
+    page.get_by_role("button", name="کالاها", exact=True).click()
     expect(page).to_have_url(vite_url.rstrip("/") + "/products")
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("کالاها")
     page.get_by_role("button", name="بستن کالاها").click()
