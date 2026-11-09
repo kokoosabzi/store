@@ -140,3 +140,30 @@ def test_store_sales_and_purchase_keep_workflow_handlers_and_standardize_tables(
         assert "koko-field" in section and "koko-button" in section
         for hook in hooks:
             assert hook in section
+
+
+def test_store_inventory_payments_returns_and_reports_keep_workflows_and_use_koko_ui():
+    source = (ROOT / "frontend/src/main.js").read_text(encoding="utf-8")
+    contracts = {
+        "inventory": ("submitAdjustment", "adjustmentProductId", "adjustmentQuantity", "adjustmentReason"),
+        "payments": ("submitPayment", "submitExpense", "paymentType", "paymentAccount", "paymentParty", "paymentAmount", "expenseType", "expenseAmount", "expenseAccount"),
+        "returns": ("submitReturn", "returnSaleId", "loadReturnSale", "returnItems", "returnRefund", "returnAccount", "returnTotal"),
+        "reports": ("loadReports", "salesReport.documents", "purchasesReport.documents"),
+    }
+    for view, hooks in contracts.items():
+        start = source.index(f"activeView==='{view}'")
+        end = source.index("</template>", start)
+        section = source[start:end]
+        assert "koko-form-section" in section or view == "reports"
+        assert "koko-table-wrap" in section
+        assert 'class="koko-table"' in section
+        for hook in hooks:
+            assert hook in section
+
+    inventory = source[source.index("activeView==='inventory'"):source.index("</template>", source.index("activeView==='inventory'"))]
+    assert '@submit.prevent="submitAdjustment"' in inventory
+    payments = source[source.index("activeView==='payments'"):source.index("</template>", source.index("activeView==='payments'"))]
+    assert '@submit.prevent="submitPayment"' in payments
+    assert '@submit.prevent="submitExpense"' in payments
+    returns = source[source.index("activeView==='returns'"):source.index("</template>", source.index("activeView==='returns'"))]
+    assert '@submit.prevent="submitReturn"' in returns
