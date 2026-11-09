@@ -80,20 +80,20 @@ const App = {
       <div><span class="koko-eyebrow">LOCAL COMMERCE CORE</span><h2>نمای کلی فروشگاه</h2><p>وضعیت فروش، سود، مطالبات و موجودی در یک نگاه</p></div>
       <div class="koko-welcome-mark" aria-hidden="true">▦</div>
     </section>
-    <section v-if="dashboard" class="metrics koko-store-metrics">
+    <section v-if="dashboard" class="metrics koko-store-metrics" aria-label="شاخص‌های مدیریتی فروشگاه">
       <article class="koko-metric koko-card-lilac"><span>فروش خالص</span><strong>{{money(dashboard.revenue)}}</strong><small>ریال</small></article>
       <article class="koko-metric koko-card-mint"><span>سود خالص</span><strong>{{money(dashboard.net_profit)}}</strong><small>ریال</small></article>
       <article class="koko-metric koko-card-blue"><span>مطالبات</span><strong>{{money(dashboard.receivables)}}</strong><small>ریال</small></article>
       <article class="koko-metric koko-card-peach"><span>هشدار موجودی</span><strong>{{money(dashboard.low_stock_count)}}</strong><small>کالا</small></article>
     </section>
     <section class="koko-section-heading"><div><h2>عملیات سریع</h2><p>دسترسی مستقیم به بخش‌های پرکاربرد فروشگاه</p></div></section>
-    <section class="koko-store-actions">
-      <button class="koko-action koko-card-blue" @click="navigate('/sales')"><span class="koko-action-icon">＋</span><strong>فاکتور فروش</strong><small>ثبت و نهایی‌سازی فروش</small><span class="koko-action-arrow">←</span></button>
-      <button class="koko-action koko-card-mint" @click="navigate('/purchases')"><span class="koko-action-icon">▤</span><strong>فاکتور خرید</strong><small>ثبت خرید کالا</small><span class="koko-action-arrow">←</span></button>
-      <button class="koko-action koko-card-lilac" @click="navigate('/products')"><span class="koko-action-icon">▣</span><strong>لیست کالاها</strong><small>مدیریت کالا و قیمت</small><span class="koko-action-arrow">←</span></button>
-      <button class="koko-action koko-card-peach" @click="navigate('/inventory')"><span class="koko-action-icon">▦</span><strong>انبار و موجودی</strong><small>کنترل موجودی و تعدیل</small><span class="koko-action-arrow">←</span></button>
-      <button class="koko-action koko-card-pink" @click="navigate('/customers')"><span class="koko-action-icon">♙</span><strong>مشتریان</strong><small>پرونده و مانده مشتریان</small><span class="koko-action-arrow">←</span></button>
-      <button class="koko-action koko-card-yellow" @click="navigate('/reports')"><span class="koko-action-icon">▥</span><strong>گزارش‌ها</strong><small>تحلیل فروش و خرید</small><span class="koko-action-arrow">←</span></button>
+    <section class="koko-store-actions" aria-label="عملیات سریع فروشگاه">
+      <button type="button" class="koko-action koko-card-blue" @click="navigate('/sales')"><span class="koko-action-icon">＋</span><strong>فاکتور فروش</strong><small>ثبت و نهایی‌سازی فروش</small><span class="koko-action-arrow">←</span></button>
+      <button type="button" class="koko-action koko-card-mint" @click="navigate('/purchases')"><span class="koko-action-icon">▤</span><strong>فاکتور خرید</strong><small>ثبت خرید کالا</small><span class="koko-action-arrow">←</span></button>
+      <button type="button" class="koko-action koko-card-lilac" @click="navigate('/products')"><span class="koko-action-icon">▣</span><strong>لیست کالاها</strong><small>مدیریت کالا و قیمت</small><span class="koko-action-arrow">←</span></button>
+      <button type="button" class="koko-action koko-card-peach" @click="navigate('/inventory')"><span class="koko-action-icon">▦</span><strong>انبار و موجودی</strong><small>کنترل موجودی و تعدیل</small><span class="koko-action-arrow">←</span></button>
+      <button type="button" class="koko-action koko-card-pink" @click="navigate('/customers')"><span class="koko-action-icon">♙</span><strong>مشتریان</strong><small>پرونده و مانده مشتریان</small><span class="koko-action-arrow">←</span></button>
+      <button type="button" class="koko-action koko-card-yellow" @click="navigate('/reports')"><span class="koko-action-icon">▥</span><strong>گزارش‌ها</strong><small>تحلیل فروش و خرید</small><span class="koko-action-arrow">←</span></button>
     </section>
     <section class="panel koko-finance-panel">
       <div class="koko-section-heading"><div><h2>خلاصه مالی</h2><p>اطلاعات دریافتی از داشبورد سامانه</p></div></div>
