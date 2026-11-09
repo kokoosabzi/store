@@ -99,10 +99,19 @@ def test_store_koko_theme_and_workspace_tabs(page, vite_url):
     expect(page.locator("#store-sidebar")).to_have_class("sidebar is-open")
     page.keyboard.press("Escape")
     expect(page.locator("#store-sidebar")).not_to_have_class("is-open")
+    expect(toggle).to_be_focused()
+
+    toggle.click()
+    expect(page.locator("#store-sidebar")).to_have_class("sidebar is-open")
+    page.locator(".sidebar-backdrop").click()
+    expect(page.locator("#store-sidebar")).not_to_have_class("is-open")
+    expect(toggle).to_be_focused()
+
     toggle.click()
     expect(page.locator("#store-sidebar")).to_have_class("sidebar is-open")
     page.get_by_role("button", name="مشتریان", exact=True).click()
     expect(page.locator("#store-sidebar")).not_to_have_class("is-open")
+    expect(toggle).to_be_focused()
 
 
 def test_store_catalog_and_people_pages_use_koko_form_and_table_contracts():
