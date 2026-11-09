@@ -89,7 +89,7 @@ import { router, navigate } from './router.js'
     render()
   }
 
-  window.addEventListener('route-change', sync)
+  window.addEventListener('popstate', sync)
   window.addEventListener('storage', event => {
     if (event.key === storageKey) {
       tabs = read()
