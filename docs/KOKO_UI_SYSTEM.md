@@ -90,3 +90,10 @@ The shared component contract is opt-in and presentation-only. Existing pages ca
 - Migrated: product/customer/supplier forms and lists; sales and purchase invoices; inventory adjustment; account receipts/payments and expenses; sales returns; sales/purchase reports; settings and backup/restore screens.
 - Invoice calculations, API calls, event handlers, stock operations, and payment/return workflows remain owned by the existing Vue state layer.
 - Remaining: inspect settings, backup/restore, and dashboard pages for any remaining legacy presentation before closing the page migration.
+
+
+### Dashboard accessibility follow-up
+
+- The Store dashboard now exposes its KPI and quick-action groups as labeled regions for assistive technology.
+- Quick-action controls explicitly declare `type="button"`, preserving their existing navigation handlers while preventing accidental form submission if the shell is later wrapped by a form.
+- Browser/source contract tests verify all six destinations and the labeled regions.
