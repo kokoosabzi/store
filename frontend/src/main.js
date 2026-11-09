@@ -1,5 +1,6 @@
 import { computed, createApp, onMounted, ref } from 'vue'
 import './style.css'
+import './koko-ui.css'
 import './koko-workspace-tabs.js'
 import './koko-theme-engine.js'
 import { router, navigate } from './router.js'
