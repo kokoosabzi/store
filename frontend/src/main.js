@@ -103,7 +103,7 @@ const App = {
   </template>
   <template v-else-if="activeView==='products'">
     <section class="two-col">
-      <form class="panel koko-form koko-form-section" @submit.prevent="addProduct">
+      <form class="panel koko-form koko-form-section" @submit.prevent=addProduct>
         <header><h2>ثبت کالای جدید</h2></header>
         <div class="koko-form-grid">
           <label class="koko-field">نام کالا<input class="koko-control" v-model="product.name" required></label>
@@ -196,7 +196,7 @@ const App = {
   </template>
   <template v-else-if="activeView==='customers'">
     <section class="two-col">
-      <form class="panel koko-form koko-form-section" @submit.prevent="addCustomer">
+      <form class="panel koko-form koko-form-section" @submit.prevent=addCustomer>
         <header><h2>ثبت مشتری</h2></header>
         <div class="koko-form-grid">
           <label class="koko-field">نام مشتری<input class="koko-control" v-model="customer.name" required></label>
@@ -216,7 +216,7 @@ const App = {
   </template>
   <template v-else-if="activeView==='suppliers'">
     <section class="two-col">
-      <form class="panel koko-form koko-form-section" @submit.prevent="addSupplier">
+      <form class="panel koko-form koko-form-section" @submit.prevent=addSupplier>
         <header><h2>ثبت تأمین‌کننده</h2></header>
         <div class="koko-form-grid">
           <label class="koko-field">نام تأمین‌کننده<input class="koko-control" v-model="supplier.name" required></label>
