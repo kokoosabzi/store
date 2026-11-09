@@ -1,0 +1,9 @@
+/* Store workspace tabs: session-only navigation over existing Vue navigation buttons. */
+(()=>{'use strict';const key='lcc.workspace.tabs.v1',host=()=>document.getElementById('koko-workspace-tabs');let tabs=[];try{tabs=JSON.parse(sessionStorage.getItem(key)||'[]')}catch{}if(!Array.isArray(tabs))tabs=[];
+const navButtons=()=>[...document.querySelectorAll('.sidebar nav button,aside nav button')];
+const active=()=>navButtons().find(b=>b.classList.contains('active'));
+const save=()=>{try{sessionStorage.setItem(key,JSON.stringify(tabs.slice(-8)))}catch{}};
+const render=()=>{const h=host();if(!h)return;h.replaceChildren();tabs.forEach((t)=>{const item=document.createElement('div');item.className='koko-tab'+(active()?.textContent.trim()===t.label?' active':'');const a=document.createElement('button');a.type='button';a.textContent=t.label;a.addEventListener('click',()=>{const b=navButtons().find(x=>x.textContent.trim()===t.label);b?.click()});const x=document.createElement('button');x.type='button';x.className='koko-tab-close';x.textContent='×';x.setAttribute('aria-label','بستن '+t.label);x.addEventListener('click',()=>{tabs=tabs.filter(v=>v.label!==t.label);save();render()});item.append(a,x);h.append(item)})};
+const sync=()=>{const b=active();if(!b)return;const label=b.textContent.trim();if(!tabs.some(t=>t.label===label))tabs.push({label});tabs=tabs.slice(-8);save();render()};
+const observer=new MutationObserver(()=>{if(host()){sync();render()}});observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});setTimeout(sync,0);setTimeout(sync,400);
+})();
