@@ -93,7 +93,7 @@ def test_store_koko_theme_and_workspace_tabs(page, vite_url):
     page.set_viewport_size({"width": 390, "height": 844})
     assert page.locator("body").evaluate("(el) => el.scrollWidth <= window.innerWidth")
 
-    toggle = page.get_by_role("button", name="☰ منو")
+    toggle = page.get_by_role("button", name="باز و بسته کردن منوی اصلی")
     expect(toggle).to_be_visible()
     toggle.click()
     expect(page.locator("#store-sidebar")).to_have_class("sidebar is-open")
