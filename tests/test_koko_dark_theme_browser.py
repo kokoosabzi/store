@@ -74,7 +74,7 @@ def test_koko_dark_theme_covers_forms_tables_dialogs_and_legacy_surfaces(page):
     assert colors["controlMatchesClass"] is True, colors
     assert colors["controlSurface"] == "#192633", colors
     for key in ("metric", "form", "control", "table", "dialog"):
-        assert colors[key]["background"] == "rgb(25, 38, 51)", colors["controlRules"][-8:] if key == "control" else colors[key]
+        assert colors[key]["background"] == "rgb(25, 38, 51)", colors["controlRules"][-4:] if key == "control" else colors[key]
     assert colors["tableHead"]["background"] == "rgb(34, 52, 66)"
     assert colors["action"]["color"] == "rgb(237, 244, 247)"
     assert colors["tab"]["background"] == "rgb(38, 59, 82)"
