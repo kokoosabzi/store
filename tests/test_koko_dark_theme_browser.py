@@ -32,15 +32,15 @@ def test_koko_dark_theme_covers_forms_tables_dialogs_and_legacy_surfaces(page):
 
     colors = page.evaluate("""() => {
       const read = id => {
-        const style = getComputedStyle(document.getElementById(id));
-        return { background: style.backgroundColor, color: style.color };
+        const el = document.getElementById(id);
+        const style = getComputedStyle(el);
+        return { background: style.backgroundColor, color: style.color, appearance: style.appearance };
       };
       return {
         body: getComputedStyle(document.body).backgroundColor,
         metric: read("metric"),
         form: read("form-section"),
         control: read("control"),
-        controlInline: document.getElementById("control").getAttribute("style"),
         table: read("table-wrap"),
         tableHead: read("table-head"),
         dialog: read("dialog"),
@@ -51,11 +51,14 @@ def test_koko_dark_theme_covers_forms_tables_dialogs_and_legacy_surfaces(page):
 
     assert colors["body"] == "rgb(16, 25, 35)"
     for key in ("metric", "form", "control", "table", "dialog"):
-        assert colors[key]["background"] == "rgb(25, 38, 51)", f"{key}: {colors}; inline={colors.get('controlInline')}"
+        assert colors[key]["background"] == "rgb(25, 38, 51)", f"{key}: {colors[key]}"
+    assert colors["control"]["appearance"] == "none"
     assert colors["tableHead"]["background"] == "rgb(34, 52, 66)"
     assert colors["action"]["color"] == "rgb(237, 244, 247)"
     assert colors["tab"]["background"] == "rgb(38, 59, 82)"
 
     page.locator("#koko-theme-panel #kt-theme").select_option("pastel")
     expect(page.locator("html")).to_have_attribute("data-koko-theme", "pastel")
-    assert page.locator("#control").evaluate("(el) => getComputedStyle(el).backgroundColor") == "rgb(255, 255, 255)"
+    restored = page.locator("#control").evaluate("(el) => ({background:getComputedStyle(el).backgroundColor,appearance:getComputedStyle(el).appearance})")
+    assert restored["background"] == "rgb(255, 255, 255)"
+    assert restored["appearance"] == "auto"
