@@ -115,7 +115,7 @@ def test_store_catalog_and_people_pages_use_koko_form_and_table_contracts():
         start = source.index(f"activeView==='{view}'")
         end = source.index("</template>", start)
         section = source[start:end]
-        assert f"@submit.prevent={handler}" in section
+        assert f'@submit.prevent="{handler}"' in section
         assert "koko-form-section" in section and "koko-form-grid" in section
         assert "koko-form-actions" in section
         assert "koko-table-wrap" in section and 'class="koko-table"' in section
