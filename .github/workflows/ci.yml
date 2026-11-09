@@ -38,6 +38,11 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install
+      - name: Validate Koko UI JavaScript syntax
+        working-directory: frontend
+        run: |
+          node --check src/koko-theme-engine.js
+          node --check src/koko-workspace-tabs.js
       - name: Build frontend
         working-directory: frontend
         run: npm run build
