@@ -56,4 +56,4 @@ jobs:
         working-directory: frontend
         run: npm run build
       - name: Run browser UI tests
-        run: python -m pytest -q tests/test_koko_ui_browser.py
+        run: python -m pytest -q tests/test_koko_ui_browser.py tests/test_koko_dark_theme_browser.py
