@@ -85,3 +85,8 @@ The shared component contract is opt-in and presentation-only. Existing pages ca
 - Verify light/dark themes, RTL, keyboard focus, validation, narrow screens, and print output.
 - Do not apply pastel gradients to dense data tables or long-form clinical/financial content.
 
+
+### Page rollout — Store
+- Migrated: product/customer/supplier forms and lists; sales and purchase invoices; inventory adjustment; account receipts/payments and expenses; sales returns; sales/purchase reports.
+- Invoice calculations, API calls, event handlers, stock operations, and payment/return workflows remain owned by the existing Vue state layer.
+- Remaining: inspect settings, backup/restore, and dashboard pages for any remaining legacy presentation before closing the page migration.
