@@ -77,6 +77,8 @@ import { router, navigate } from './router.js'
         }
         save()
         render()
+        const focusIndex = Math.min(index, tabs.length - 1)
+        if (tabs.length > 0) element.querySelectorAll('.koko-tab')[focusIndex]?.querySelector('button:not(.koko-tab-close)')?.focus()
       })
 
       item.append(activateButton, closeButton)
