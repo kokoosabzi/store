@@ -114,7 +114,7 @@ def test_store_koko_theme_and_workspace_tabs(page, vite_url):
 
     toggle.click()
     expect(page.locator("#store-sidebar")).to_have_class("sidebar is-open")
-    page.get_by_role("button", name="مشتریان", exact=True).click()
+    page.get_by_role("navigation", name="منوی اصلی").get_by_role("button", name="مشتریان", exact=True).click()
     expect(page.locator("#store-sidebar")).not_to_have_class("is-open")
     expect(toggle).to_be_focused()
 
