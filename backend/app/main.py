@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from decimal import Decimal
 from fastapi import Depends, FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -199,11 +201,26 @@ def change_pin(body:PinChangeIn, db:Session=Depends(get_db)):
     settings.pin_hash=hash_pin(body.pin); settings.must_change_pin=False; audit(db, 'update', 'security_settings', settings.id); return {'changed': True}
 @app.post('/api/restore')
 def restore(body:RestoreIn, db:Session=Depends(get_db)):
-    settings=security_settings(db)
-    if not settings or not verify_pin(body.pin, settings.pin_hash): fail('PIN مدیر صحیح نیست.', 403)
+    manager_settings=security_settings(db)
+    if not manager_settings or not verify_pin(body.pin, manager_settings.pin_hash):
+        fail('PIN مدیر صحیح نیست.', 403)
+
+    # End this request's transaction and return its checked-out SQLite
+    # connection before replacing the database file.
+    db.rollback()
+    db.info["skip_commit"] = True
+    db.close()
     engine.dispose()
-    try: return restore_backup(body.backup_name)
-    except ValueError as error: fail(str(error))
+
+    try:
+        result = restore_backup(body.backup_name)
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return result
+    except ValueError as error:
+        fail(str(error))
+    finally:
+        engine.dispose()
 @app.get('/api/backups')
 def list_backups():
     from .config import settings
@@ -224,3 +241,23 @@ def purchases_report(db:Session=Depends(get_db)):
     return {'count':len(rows), 'total':str(sum((item.total for item in rows), Decimal('0'))), 'documents':[data(item) for item in rows]}
 @app.get('/api/audit')
 def audit_log(db:Session=Depends(get_db)): return [data(item) for item in db.scalars(select(AuditLog).order_by(AuditLog.id.desc())).all()]
+
+# Serve the production Vue build from FastAPI so the installed app needs only
+# the Python server at runtime. Vite remains available for development.
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if (FRONTEND_DIST / "index.html").is_file():
+    assets_directory = FRONTEND_DIST / "assets"
+    if assets_directory.is_dir():
+        app.mount(
+            "/assets",
+            StaticFiles(directory=assets_directory),
+            name="frontend-assets",
+        )
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend(full_path: str):
+        requested = (FRONTEND_DIST / full_path).resolve()
+        if FRONTEND_DIST.resolve() in requested.parents and requested.is_file():
+            return FileResponse(requested)
+        return FileResponse(FRONTEND_DIST / "index.html")
+
