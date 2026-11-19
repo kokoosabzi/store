@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from decimal import Decimal
 from fastapi import Depends, FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -239,3 +241,23 @@ def purchases_report(db:Session=Depends(get_db)):
     return {'count':len(rows), 'total':str(sum((item.total for item in rows), Decimal('0'))), 'documents':[data(item) for item in rows]}
 @app.get('/api/audit')
 def audit_log(db:Session=Depends(get_db)): return [data(item) for item in db.scalars(select(AuditLog).order_by(AuditLog.id.desc())).all()]
+
+# Serve the production Vue build from FastAPI so the installed app needs only
+# the Python server at runtime. Vite remains available for development.
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if (FRONTEND_DIST / "index.html").is_file():
+    assets_directory = FRONTEND_DIST / "assets"
+    if assets_directory.is_dir():
+        app.mount(
+            "/assets",
+            StaticFiles(directory=assets_directory),
+            name="frontend-assets",
+        )
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend(full_path: str):
+        requested = (FRONTEND_DIST / full_path).resolve()
+        if FRONTEND_DIST.resolve() in requested.parents and requested.is_file():
+            return FileResponse(requested)
+        return FileResponse(FRONTEND_DIST / "index.html")
+
