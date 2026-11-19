@@ -107,7 +107,8 @@ jobs:
           $purchase = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/purchases/draft" -ContentType "application/json" -Body $purchaseBody
           Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/purchases/$($purchase.id)/finalize?account_id=$($account.id)" | Out-Null
           $saleBody = @{items=@(@{product_id=$product.id;quantity="2";unit_price="150"});paid_amount="300"} | ConvertTo-Json -Depth 6
-          Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/sales/draft" -ContentType "application/json" -Body $saleBody | Out-Null
+          $saleDraftResponse = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/sales/draft" -ContentType "application/json" -Body $saleBody
+          Write-Host ("Sale draft response: " + ($saleDraftResponse | ConvertTo-Json -Compress))
           $saleDrafts = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/sales"
           if (-not $saleDrafts) { throw "Sale draft was not persisted." }
           $saleId = [int]($saleDrafts | Select-Object -Last 1).id
