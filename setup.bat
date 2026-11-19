@@ -70,9 +70,9 @@ if errorlevel 1 (
   goto :fail
 )
 cd /d "%ROOT%frontend"
-npm install
+call npm install
 if errorlevel 1 goto :fail
-npm run build
+call npm run build
 if errorlevel 1 goto :fail
 if not exist "%ROOT%frontend\dist\index.html" (
   echo ERROR: Production frontend build was not created.
