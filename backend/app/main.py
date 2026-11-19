@@ -199,11 +199,26 @@ def change_pin(body:PinChangeIn, db:Session=Depends(get_db)):
     settings.pin_hash=hash_pin(body.pin); settings.must_change_pin=False; audit(db, 'update', 'security_settings', settings.id); return {'changed': True}
 @app.post('/api/restore')
 def restore(body:RestoreIn, db:Session=Depends(get_db)):
-    settings=security_settings(db)
-    if not settings or not verify_pin(body.pin, settings.pin_hash): fail('PIN مدیر صحیح نیست.', 403)
+    manager_settings=security_settings(db)
+    if not manager_settings or not verify_pin(body.pin, manager_settings.pin_hash):
+        fail('PIN مدیر صحیح نیست.', 403)
+
+    # End this request's transaction and return its checked-out SQLite
+    # connection before replacing the database file.
+    db.rollback()
+    db.info["skip_commit"] = True
+    db.close()
     engine.dispose()
-    try: return restore_backup(body.backup_name)
-    except ValueError as error: fail(str(error))
+
+    try:
+        result = restore_backup(body.backup_name)
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return result
+    except ValueError as error:
+        fail(str(error))
+    finally:
+        engine.dispose()
 @app.get('/api/backups')
 def list_backups():
     from .config import settings
