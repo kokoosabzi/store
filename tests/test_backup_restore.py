@@ -1,7 +1,10 @@
+import os
 import sqlite3
 from pathlib import Path
 
 import pytest
+
+os.environ['LCC_DATABASE_URL'] = 'sqlite:///./test_local_commerce.db'
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
