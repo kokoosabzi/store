@@ -97,8 +97,8 @@ jobs:
         run: |
           $health = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/health"
           if ($health.status -ne "ok") { throw "Health endpoint failed." }
-          $home = Invoke-WebRequest -Uri "http://127.0.0.1:8000/" -UseBasicParsing
-          if ($home.StatusCode -ne 200 -or $home.Content -notmatch 'id="app"') { throw "Production Vue UI was not served by FastAPI." }
+          $homePage = Invoke-WebRequest -Uri "http://127.0.0.1:8000/" -UseBasicParsing
+          if ($homePage.StatusCode -ne 200 -or $homePage.Content -notmatch 'id="app"') { throw "Production Vue UI was not served by FastAPI." }
           $pin = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/security/setup-pin" -ContentType "application/json" -Body (@{pin="1234"} | ConvertTo-Json)
           $account = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/accounts?name=Windows%20Cash"
           $supplier = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/suppliers" -ContentType "application/json" -Body (@{name="Windows Supplier"} | ConvertTo-Json)
