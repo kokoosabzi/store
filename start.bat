@@ -14,6 +14,12 @@ if not defined LCC_DATA_DIR set "LCC_DATA_DIR=%LOCALAPPDATA%\LocalCommerceCore\d
 if not defined LCC_BACKUP_DIR set "LCC_BACKUP_DIR=%LOCALAPPDATA%\LocalCommerceCore\backups"
 if not defined LCC_RUN_DIR set "LCC_RUN_DIR=%LOCALAPPDATA%\LocalCommerceCore\run"
 if not defined LCC_LOG_DIR set "LCC_LOG_DIR=%LOCALAPPDATA%\LocalCommerceCore\logs"
+
+if exist "%ROOT%data\local_commerce.db" if /I not "%LCC_DATA_DIR%\local_commerce.db"=="%ROOT%data\local_commerce.db" (
+  echo ERROR: A repository-local database exists at data\local_commerce.db.
+  echo Set LCC_DATA_DIR to that database folder before starting, or run setup.bat to review the data location.
+  exit /b 1
+)
 set "PID_FILE=%LCC_RUN_DIR%\server.pid"
 set "PYTHON_EXE=%ROOT%.venv\Scripts\python.exe"
 
