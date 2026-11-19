@@ -70,7 +70,7 @@ if errorlevel 1 (
   goto :fail
 )
 cd /d "%ROOT%frontend"
-npm ci
+npm install
 if errorlevel 1 goto :fail
 npm run build
 if errorlevel 1 goto :fail
