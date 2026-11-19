@@ -105,7 +105,8 @@ jobs:
           $product = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/products" -ContentType "application/json" -Body (@{name="Windows Smoke Product";current_purchase_price="100";retail_price="150";min_stock="1"} | ConvertTo-Json)
           $purchaseBody = @{supplier_id=$supplier.id;items=@(@{product_id=$product.id;quantity="5";unit_price="100"})} | ConvertTo-Json -Depth 6
           $purchase = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/purchases/draft" -ContentType "application/json" -Body $purchaseBody
-          Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/purchases/$($purchase.id)/finalize?account_id=$($account.id)" | Out-Null
+          $purchaseFinal = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/purchases/$($purchase.id)/finalize?account_id=$($account.id)"
+          Write-Host ("Purchase final: " + ($purchaseFinal | ConvertTo-Json -Compress))
           $saleBody = @{items=@(@{product_id=$product.id;quantity="2";unit_price="150"});paid_amount="300"} | ConvertTo-Json -Depth 6
           $saleDraftResponse = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/sales/draft" -ContentType "application/json" -Body $saleBody
           Write-Host ("Sale draft response: " + ($saleDraftResponse | ConvertTo-Json -Compress))
@@ -113,10 +114,12 @@ jobs:
           if (-not $saleDrafts) { throw "Sale draft was not persisted." }
           $saleId = [int]($saleDrafts | Select-Object -Last 1).id
           if ($saleId -lt 1) { throw "Sale draft has no valid ID." }
-          Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/sales/$saleId/finalize?account_id=$($account.id)" | Out-Null
+          $saleFinal = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/sales/$saleId/finalize?account_id=$($account.id)"
+          Write-Host ("Sale final: " + ($saleFinal | ConvertTo-Json -Compress))
           $inventory = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/inventory"
+          Write-Host ("Inventory: " + ($inventory | ConvertTo-Json -Compress))
           $stock = $inventory | Where-Object { $_.id -eq $product.id }
-          if ($stock.current_stock -ne "3.000") { throw "Purchase/sale inventory did not reconcile." }
+          if ([decimal]$stock.current_stock -ne [decimal]3) { throw "Purchase/sale inventory did not reconcile." }
           $profit = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/reports/profit-loss"
           if ($profit.revenue -ne "300.00" -or $profit.cogs -ne "200.00000") { throw "Historical COGS or profit report did not reconcile." }
           $backup = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/backups"
