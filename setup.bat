@@ -1,79 +1,106 @@
 @echo off
-setlocal
+chcp 65001 >nul
+setlocal EnableExtensions
 title Local Commerce Core - Setup
-
 cd /d "%~dp0"
+set "ROOT=%~dp0"
+set "PYTHONUTF8=1"
 
-echo ==========================================
-echo   LOCAL COMMERCE CORE - SETUP
-echo ==========================================
-echo.
+if not defined LOCALAPPDATA (
+  echo ERROR: LOCALAPPDATA is not available.
+  goto :fail
+)
+if not defined LCC_DATA_DIR set "LCC_DATA_DIR=%LOCALAPPDATA%\LocalCommerceCore\data"
+if not defined LCC_BACKUP_DIR set "LCC_BACKUP_DIR=%LOCALAPPDATA%\LocalCommerceCore\backups"
+if not defined LCC_RUN_DIR set "LCC_RUN_DIR=%LOCALAPPDATA%\LocalCommerceCore\run"
+if not defined LCC_LOG_DIR set "LCC_LOG_DIR=%LOCALAPPDATA%\LocalCommerceCore\logs"
 
-if not exist ".venv\Scripts\python.exe" (
-    echo [1/5] Creating Python virtual environment...
-    python -m venv .venv
-    if errorlevel 1 (
-        echo.
-        echo ERROR: Failed to create virtual environment.
-        pause
-        exit /b 1
-    )
-) else (
-    echo [1/5] Python virtual environment already exists.
+if exist "%ROOT%data\local_commerce.db" if /I not "%LCC_DATA_DIR%\local_commerce.db"=="%ROOT%data\local_commerce.db" (
+  echo ERROR: A repository-local data\local_commerce.db already exists.
+  echo Setup will not silently switch to a new empty database or move existing data.
+  echo Set LCC_DATA_DIR to the folder containing that existing database and rerun setup.bat.
+  goto :fail
 )
 
-echo.
-echo [2/5] Upgrading pip...
-".venv\Scripts\python.exe" -m pip install --upgrade pip
+if not exist "%LCC_DATA_DIR%" mkdir "%LCC_DATA_DIR%"
+if not exist "%LCC_BACKUP_DIR%" mkdir "%LCC_BACKUP_DIR%"
+if not exist "%LCC_RUN_DIR%" mkdir "%LCC_RUN_DIR%"
+if not exist "%LCC_LOG_DIR%" mkdir "%LCC_LOG_DIR%"
 
-echo.
-echo [3/5] Installing Python dependencies...
-".venv\Scripts\python.exe" -m pip install -r requirements.txt
+where py >nul 2>&1
 if errorlevel 1 (
-    echo.
-    echo ERROR: Python dependency installation failed.
-    pause
-    exit /b 1
+  echo ERROR: Python Launcher was not found. Install Python 3.12 and enable py.exe.
+  goto :fail
 )
-
-echo.
-echo [4/5] Preparing database directories...
-if not exist "data" mkdir "data"
-if not exist "backups" mkdir "backups"
-
-echo.
-echo [5/5] Running database migrations...
-set "PYTHONPATH=%CD%"
-".venv\Scripts\python.exe" -m alembic upgrade head
+py -3.12 --version >nul 2>&1
 if errorlevel 1 (
-    echo.
-    echo ERROR: Database migration failed.
-    pause
-    exit /b 1
+  echo ERROR: Python 3.12 was not found.
+  goto :fail
 )
 
-echo.
-echo ==========================================
-echo   Installing Frontend dependencies...
-echo ==========================================
-cd /d "%~dp0frontend"
-
-if not exist "node_modules" (
-    npm install
-    if errorlevel 1 (
-        echo.
-        echo ERROR: Frontend installation failed.
-        pause
-        exit /b 1
-    )
+if not exist "%ROOT%.venv\Scripts\python.exe" (
+  echo [1/5] Creating Python 3.12 virtual environment...
+  py -3.12 -m venv "%ROOT%.venv"
+  if errorlevel 1 goto :fail
 ) else (
-    echo node_modules already exists. Skipping npm install.
+  echo [1/5] Existing virtual environment found.
 )
+set "PYTHON_EXE=%ROOT%.venv\Scripts\python.exe"
+"%PYTHON_EXE%" -c "import sys; raise SystemExit(0 if sys.version_info >= (3,12) else 1)"
+if errorlevel 1 (
+  echo ERROR: The existing .venv requires Python 3.12 or newer. Recreate .venv with Python 3.12.
+  goto :fail
+)
+
+echo [2/5] Installing Python dependencies...
+"%PYTHON_EXE%" -m pip install --upgrade pip
+if errorlevel 1 goto :fail
+"%PYTHON_EXE%" -m pip install -r requirements.txt
+if errorlevel 1 goto :fail
+
+echo [3/5] Installing and building the Vue frontend...
+where node >nul 2>&1
+if errorlevel 1 (
+  echo ERROR: Node.js is required only during setup to build the frontend.
+  goto :fail
+)
+where npm >nul 2>&1
+if errorlevel 1 (
+  echo ERROR: npm was not found.
+  goto :fail
+)
+cd /d "%ROOT%frontend"
+npm ci
+if errorlevel 1 goto :fail
+npm run build
+if errorlevel 1 goto :fail
+if not exist "%ROOT%frontend\dist\index.html" (
+  echo ERROR: Production frontend build was not created.
+  goto :fail
+)
+
+echo [4/5] Preparing local application data...
+cd /d "%ROOT%"
+set "PYTHONPATH=%ROOT%"
+"%PYTHON_EXE%" -m alembic upgrade head
+if errorlevel 1 goto :fail
+
+echo [5/5] Verifying installation...
+"%PYTHON_EXE%" -c "from backend.app.config import settings; from pathlib import Path; assert Path(settings.database_url.split('///',1)[1]).parent.exists()"
+if errorlevel 1 goto :fail
 
 echo.
 echo ==========================================
 echo   SETUP COMPLETED SUCCESSFULLY
 echo ==========================================
+echo Data: %LCC_DATA_DIR%
+echo Backups: %LCC_BACKUP_DIR%
+echo Run start.bat to launch the application.
+if not "%LCC_NO_PAUSE%"=="1" pause
+exit /b 0
+
+:fail
 echo.
-pause
-endlocal
+echo ERROR: Setup did not complete. Existing data was not intentionally deleted or moved.
+if not "%LCC_NO_PAUSE%"=="1" pause
+exit /b 1
