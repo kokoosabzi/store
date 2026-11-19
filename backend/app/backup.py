@@ -70,14 +70,15 @@ def _temporary_path(directory: Path) -> Path:
     return Path(name)
 
 
-def create_backup() -> dict:
-    source_path = database_path()
+def create_backup(source_path: Path | None = None, backup_directory: Path | None = None) -> dict:
+    source_path = (source_path or database_path()).expanduser().resolve()
     if not source_path.is_file():
         raise ValueError("پایگاه‌داده برای پشتیبان‌گیری هنوز ایجاد نشده است.")
-    settings.backup_dir.mkdir(parents=True, exist_ok=True)
+    destination_directory = (backup_directory or settings.backup_dir).expanduser().resolve()
+    destination_directory.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    target = settings.backup_dir / f"local-commerce-{timestamp}.db"
-    temporary = _temporary_path(settings.backup_dir)
+    target = destination_directory / f"local-commerce-{timestamp}.db"
+    temporary = _temporary_path(destination_directory)
     try:
         _sqlite_snapshot(source_path, temporary)
         validation = validate_backup(temporary)
@@ -88,17 +89,21 @@ def create_backup() -> dict:
         temporary.unlink(missing_ok=True)
 
 
-def restore_backup(backup_name: str) -> dict:
+def restore_backup(
+    backup_name: str,
+    source_path: Path | None = None,
+    backup_directory: Path | None = None,
+) -> dict:
     """Restore a validated backup after the caller closes DB sessions and disposes the engine."""
-    backup_root = settings.backup_dir.resolve()
+    backup_root = (backup_directory or settings.backup_dir).expanduser().resolve()
     candidate = (backup_root / backup_name).resolve()
     if candidate.parent != backup_root or candidate.suffix.lower() != ".db":
         raise ValueError("نام فایل پشتیبان معتبر نیست.")
     validation = validate_backup(candidate)
 
-    source_path = database_path()
-    settings.backup_dir.mkdir(parents=True, exist_ok=True)
-    current_backup = create_backup() if source_path.is_file() else None
+    source_path = (source_path or database_path()).expanduser().resolve()
+    backup_root.mkdir(parents=True, exist_ok=True)
+    current_backup = create_backup(source_path, backup_root) if source_path.is_file() else None
     temporary = _temporary_path(source_path.parent)
     try:
         _sqlite_snapshot(candidate, temporary)
